@@ -1,35 +1,45 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/database';
-import { UserRole } from '../types/auth';
 
-export interface User {
-  id: number;
-  email: string;
-  password: string;
-  role: UserRole;
+// ENUMERACION DE ROLES SEGUN DB
+export enum UserRole {
+    ADMIN = 'admin',
+    VETERINARIO = 'veterinario',
+    CLIENTE = 'cliente'
 }
 
-export const findUserByEmail = async (email: string): Promise<User | null> => {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT * FROM usuarios WHERE email = ?', // CAMBIO DE TABLA: USERS -> USUARIOS
-    [email]
-  );
+// INTERFAZ DE USUARIO
+export interface Usuario {
+    id?: number;
+    email: string;
+    password?: string;
+    rol: UserRole | string;
+    creado_en?: Date;
+}
 
-  if (rows.length === 0) return null;
-
-  const row = rows[0];
-  return {
-    id: row.id,
-    email: row.email,
-    password: row.password,
-    role: row.rol as UserRole // CAMBIO DE CAMPO: ROLE -> ROL
-  };
+// BUSCAR POR EMAIL
+export const findByEmail = async (email: string): Promise<Usuario | null> => {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        'SELECT * FROM usuarios WHERE email = ?',
+        [email]
+    );
+    return rows.length ? (rows[0] as Usuario) : null;
 };
 
-export const createUser = async (user: Omit<User, 'id'>): Promise<number> => {
-  const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO usuarios (email, password, rol) VALUES (?, ?, ?)', // CAMBIO: USUARIOS Y ROL
-    [user.email, user.password, user.role || UserRole.USER]
-  );
-  return result.insertId;
+// CREAR USUARIO
+export const create = async (user: Usuario): Promise<Usuario> => {
+    const [result] = await pool.execute<ResultSetHeader>(
+        'INSERT INTO usuarios (email, password, rol) VALUES (?, ?, ?)',
+        [user.email, user.password, user.rol]
+    );
+    return { id: result.insertId, ...user };
+};
+
+// BUSCAR POR ID
+export const findById = async (id: number): Promise<Usuario | null> => {
+    const [rows] = await pool.query<RowDataPacket[]>(
+        'SELECT * FROM usuarios WHERE id = ?',
+        [id]
+    );
+    return rows.length ? (rows[0] as Usuario) : null;
 };

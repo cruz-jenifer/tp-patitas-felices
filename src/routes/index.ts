@@ -1,18 +1,15 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
-import mascotasRoutes from './mascotas.routes';
-import duenosRoutes from './duenos.routes';
-import veterinariosRoutes from './veterinarios.routes';
-import historialRoutes from './historial.routes';
+import duenoRoutes from './dueno.routes';     
+import mascotaRoutes from './mascota.routes'; 
 import turnoRoutes from './turno.routes';
 
 const router = Router();
 
+// RUTAS PRINCIPALES
 router.use('/auth', authRoutes);
-router.use('/mascotas', mascotasRoutes);
-router.use('/duenos', duenosRoutes);
-router.use('/veterinarios', veterinariosRoutes);
-router.use('/historial', historialRoutes);
+router.use('/duenos', duenoRoutes);
+router.use('/mascotas', mascotaRoutes);
 router.use('/turnos', turnoRoutes);
 
 export default router;

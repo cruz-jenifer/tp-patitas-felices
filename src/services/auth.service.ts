@@ -1,52 +1,46 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import * as usuarioModel from '../models/usuarios.model';
-import { JwtPayload, UserRole } from '../types/auth';
+import * as userModel from '../models/usuarios.model';
+import { Usuario } from '../models/usuarios.model';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_key';
+// REGISTRO DE USUARIO
+export const register = async (userData: Usuario) => {
+    const existingUser = await userModel.findByEmail(userData.email);
+    if (existingUser) {
+        throw new Error('El usuario ya existe');
+    }
 
-export const register = async (email: string, password: string): Promise<number> => {
-  const existingUser = await usuarioModel.findUserByEmail(email);
-  if (existingUser) {
-    throw new Error('EL USUARIO YA EXISTE');
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  
-  const userId = await usuarioModel.createUser({
-    email,
-    password: hashedPassword,
-    role: UserRole.USER 
-  });
-
-  return userId;
+    const hashedPassword = await bcrypt.hash(userData.password!, 10);
+    
+    // GUARDAMOS CON ROL POR DEFECTO SI NO VIENE
+    const newUser = await userModel.create({ 
+        ...userData, 
+        password: hashedPassword,
+        rol: userData.rol || 'cliente' 
+    });
+    
+    const { password, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
 };
 
-export const login = async (email: string, password: string): Promise<{token: string, user: any}> => {
-  const user = await usuarioModel.findUserByEmail(email);
-  if (!user) {
-    throw new Error('CREDENCIALES INVÁLIDAS');
-  }
-
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new Error('CREDENCIALES INVÁLIDAS');
-  }
-
-  const payload: JwtPayload = {
-    id: user.id,
-    email: user.email,
-    role: user.role 
-  };
-
-  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
-  
-  return {
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      rol: user.role
+// LOGIN DE USUARIO
+export const login = async (credentials: { email: string, password: string }) => {
+    const user = await userModel.findByEmail(credentials.email);
+    
+    if (!user || !user.password) {
+        throw new Error('Credenciales inválidas');
     }
-  };
+
+    const isMatch = await bcrypt.compare(credentials.password, user.password);
+    if (!isMatch) {
+        throw new Error('Credenciales inválidas');
+    }
+
+    const token = jwt.sign(
+        { id: user.id, rol: user.rol }, 
+        process.env.JWT_SECRET || 'secret',
+        { expiresIn: '1h' }
+    );
+
+    return { token, user: { id: user.id, email: user.email, rol: user.rol } };
 };
