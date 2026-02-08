@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret_key';
 export const register = async (email: string, password: string): Promise<number> => {
   const existingUser = await usuarioModel.findUserByEmail(email);
   if (existingUser) {
-    throw new Error('El usuario ya existe');
+    throw new Error('EL USUARIO YA EXISTE');
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -16,29 +16,37 @@ export const register = async (email: string, password: string): Promise<number>
   const userId = await usuarioModel.createUser({
     email,
     password: hashedPassword,
-    role: UserRole.USER
+    role: UserRole.USER 
   });
 
   return userId;
 };
 
-export const login = async (email: string, password: string): Promise<string> => {
+export const login = async (email: string, password: string): Promise<{token: string, user: any}> => {
   const user = await usuarioModel.findUserByEmail(email);
   if (!user) {
-    throw new Error('Credenciales inválidas');
+    throw new Error('CREDENCIALES INVÁLIDAS');
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    throw new Error('Credenciales inválidas');
+    throw new Error('CREDENCIALES INVÁLIDAS');
   }
 
   const payload: JwtPayload = {
     id: user.id,
     email: user.email,
-    role: user.role
+    role: user.role 
   };
 
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1d' });
-  return token;
+  
+  return {
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      rol: user.role
+    }
+  };
 };

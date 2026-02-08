@@ -4,6 +4,7 @@ import mascotasRoutes from './mascotas.routes';
 import duenosRoutes from './duenos.routes';
 import veterinariosRoutes from './veterinarios.routes';
 import historialRoutes from './historial.routes';
+import turnoRoutes from './turno.routes';
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use('/mascotas', mascotasRoutes);
 router.use('/duenos', duenosRoutes);
 router.use('/veterinarios', veterinariosRoutes);
 router.use('/historial', historialRoutes);
+router.use('/turnos', turnoRoutes);
 
 export default router;

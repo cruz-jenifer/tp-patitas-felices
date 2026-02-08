@@ -11,7 +11,7 @@ export interface User {
 
 export const findUserByEmail = async (email: string): Promise<User | null> => {
   const [rows] = await pool.query<RowDataPacket[]>(
-    'SELECT * FROM users WHERE email = ?',
+    'SELECT * FROM usuarios WHERE email = ?', // CAMBIO DE TABLA: USERS -> USUARIOS
     [email]
   );
 
@@ -22,13 +22,13 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
     id: row.id,
     email: row.email,
     password: row.password,
-    role: row.role as UserRole
+    role: row.rol as UserRole // CAMBIO DE CAMPO: ROLE -> ROL
   };
 };
 
 export const createUser = async (user: Omit<User, 'id'>): Promise<number> => {
   const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
+    'INSERT INTO usuarios (email, password, rol) VALUES (?, ?, ?)', // CAMBIO: USUARIOS Y ROL
     [user.email, user.password, user.role || UserRole.USER]
   );
   return result.insertId;

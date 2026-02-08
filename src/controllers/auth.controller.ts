@@ -6,7 +6,7 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     const { email, password } = req.body;
     const userId = await authService.register(email, password);
     res.status(201).json({ 
-      message: 'Usuario registrado exitosamente', 
+      message: 'USUARIO REGISTRADO EXITOSAMENTE', 
       userId 
     });
   } catch (error) {
@@ -17,10 +17,15 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const token = await authService.login(email, password);
+    const { token, user } = await authService.login(email, password);
     res.status(200).json({ 
-      message: 'Autenticación exitosa', 
-      token 
+      message: 'AUTENTICACIÓN EXITOSA', 
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        rol: user.rol // CAMBIO: ROLE -> ROL PARA CONSISTENCIA CON BD
+      }
     });
   } catch (error) {
     next(error);
