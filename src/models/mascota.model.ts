@@ -1,37 +1,32 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { pool } from '../config/database';
+import { Turno, TurnoRow } from '../types/turno';
 
-export interface Mascota {
-    id?: number;
-    nombre: string;
-    especie: string;
-    raza?: string;
-    fecha_nacimiento?: string;
-    advertencias?: string;
-    dueno_id: number; // Relación obligatoria
-}
+// BUSCAR TURNO POR VETERINARIO Y FECHA (VALIDACIÓN DE DISPONIBILIDAD)
+export const findByVetAndDate = async (veterinarioId: number, fechaHora: string): Promise<Turno | null> => {
+    const [rows] = await pool.query<TurnoRow[]>(
+        'SELECT * FROM turnos WHERE veterinario_id = ? AND fecha_hora = ?',
+        [veterinarioId, fechaHora]
+    );
+    return rows.length > 0 ? rows[0] : null;
+};
 
-// CREAR MASCOTA (CON DUEÑO ASIGNADO)
-export const create = async (mascota: Mascota): Promise<Mascota> => {
+// CREAR NUEVO TURNO
+export const create = async (turno: Turno): Promise<Turno> => {
     const [result] = await pool.execute<ResultSetHeader>(
-        'INSERT INTO mascotas (nombre, especie, raza, fecha_nacimiento, advertencias, dueno_id) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO turnos (mascota_id, servicio_id, veterinario_id, fecha_hora, motivo, estado) VALUES (?, ?, ?, ?, ?, ?)',
         [
-            mascota.nombre, 
-            mascota.especie, 
-            mascota.raza || null, 
-            mascota.fecha_nacimiento || null, 
-            mascota.advertencias || null,
-            mascota.dueno_id
+            turno.mascota_id,
+            turno.servicio_id,
+            turno.veterinario_id,
+            turno.fecha_hora,
+            turno.motivo,
+            turno.estado || 'pendiente'
         ]
     );
-    return { id: result.insertId, ...mascota };
+    return { id: result.insertId, ...turno };
 };
 
-// BUSCAR MASCOTAS POR DUEÑO (FEAT 5 - FILTRO)
-export const findByDuenoId = async (duenoId: number): Promise<Mascota[]> => {
-    const [rows] = await pool.query<RowDataPacket[]>(
-        'SELECT * FROM mascotas WHERE dueno_id = ?',
-        [duenoId]
-    );
-    return rows as Mascota[];
-};
+export function findByDuenoId(id: number) {
+    throw new Error('Function not implemented.');
+}

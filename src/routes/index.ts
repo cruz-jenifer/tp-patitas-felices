@@ -3,6 +3,8 @@ import authRoutes from './auth.routes';
 import duenoRoutes from './dueno.routes';     
 import mascotaRoutes from './mascota.routes'; 
 import turnoRoutes from './turno.routes';
+import servicioRouter from './servicio.routes'; 
+import historialRouter from './historial.routes';
 
 const router = Router();
 
@@ -11,5 +13,7 @@ router.use('/auth', authRoutes);
 router.use('/duenos', duenoRoutes);
 router.use('/mascotas', mascotaRoutes);
 router.use('/turnos', turnoRoutes);
+router.use('/servicios', servicioRouter);
+router.use('/historial', historialRouter);
 
 export default router;

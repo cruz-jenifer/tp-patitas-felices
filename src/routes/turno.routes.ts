@@ -4,9 +4,13 @@ import * as turnoController from '../controllers/turno.controller';
 
 const router = Router();
 
-// TODAS LAS RUTAS DE TURNOS REQUIEREN AUTENTICACIÓN
+// TODAS LAS RUTAS REQUIEREN AUTH
 router.use(authMiddleware);
 
+// RUTA DASHBOARD VETERINARIO
+router.get('/agenda', turnoController.getAgenda); 
+
+// RUTAS CRUD STANDARD
 router.get('/', turnoController.getMisTurnos); 
 router.post('/', turnoController.createTurno);
 router.delete('/:id', turnoController.deleteTurno); 

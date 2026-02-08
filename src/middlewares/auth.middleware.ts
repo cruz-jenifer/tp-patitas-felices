@@ -2,22 +2,33 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types/auth';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret_key';
-
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+    try {
+        const authHeader = req.headers.authorization;
 
-  if (!authHeader) {
-    return res.status(401).json({ message: 'No se proporcionó token de autenticación' });
-  }
+        if (!authHeader) {
+            return res.status(401).json({ message: 'ACCESO DENEGADO: Falta el token' });
+        }
 
-  const token = authHeader.split(' ')[1];
+       /* const token = authHeader.replace('Bearer ', '').trim();
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(403).json({ message: 'Token inválido o expirado' });
-  }
+        const secret = process.env.JWT_SECRET || 'patitas_secreta_123'; 
+
+        const decoded = jwt.verify(token, secret) as JwtPayload;
+        */
+
+
+const token = authHeader.replace('Bearer ', '').trim();
+const secret = 'UTN_PATITAS_2024'; 
+
+const decoded = jwt.verify(token, secret) as JwtPayload;
+req.user = decoded;
+next();
+
+
+    } catch (error) {
+       
+        console.log('❌ Error detallado de Auth:', error); 
+        return res.status(403).json({ message: 'Token inválido o expirado' });
+    }
 };

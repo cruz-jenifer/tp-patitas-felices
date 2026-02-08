@@ -20,7 +20,7 @@ export interface Usuario {
 // BUSCAR POR EMAIL
 export const findByEmail = async (email: string): Promise<Usuario | null> => {
     const [rows] = await pool.query<RowDataPacket[]>(
-        'SELECT * FROM usuarios WHERE email = ?',
+        'SELECT * FROM users WHERE email = ?',
         [email]
     );
     return rows.length ? (rows[0] as Usuario) : null;
@@ -29,7 +29,7 @@ export const findByEmail = async (email: string): Promise<Usuario | null> => {
 // CREAR USUARIO
 export const create = async (user: Usuario): Promise<Usuario> => {
     const [result] = await pool.execute<ResultSetHeader>(
-        'INSERT INTO usuarios (email, password, rol) VALUES (?, ?, ?)',
+        'INSERT INTO users (email, password, rol) VALUES (?, ?, ?)',
         [user.email, user.password, user.rol]
     );
     return { id: result.insertId, ...user };
@@ -38,7 +38,7 @@ export const create = async (user: Usuario): Promise<Usuario> => {
 // BUSCAR POR ID
 export const findById = async (id: number): Promise<Usuario | null> => {
     const [rows] = await pool.query<RowDataPacket[]>(
-        'SELECT * FROM usuarios WHERE id = ?',
+        'SELECT * FROM users WHERE id = ?',
         [id]
     );
     return rows.length ? (rows[0] as Usuario) : null;
