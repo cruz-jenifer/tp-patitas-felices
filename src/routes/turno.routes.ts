@@ -1,18 +1,25 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middlewares/auth.middleware';
+import { checkRole } from '../middlewares/role.middleware';
 import * as turnoController from '../controllers/turno.controller'; 
 
 const router = Router();
 
-// TODAS LAS RUTAS REQUIEREN AUTH
+// APLICAR AUTH A TODO EL MODULO
 router.use(authMiddleware);
 
 // RUTA DASHBOARD VETERINARIO
-router.get('/agenda', turnoController.getAgenda); 
+// SOLO VETERINARIOS Y ADMIN PUEDEN VER LA AGENDA COMPLETA
+router.get('/agenda', checkRole(['veterinario', 'admin']), turnoController.getAgenda); 
 
 // RUTAS CRUD STANDARD
-router.get('/', turnoController.getMisTurnos); 
-router.post('/', turnoController.createTurno);
-router.delete('/:id', turnoController.deleteTurno); 
+// CLIENTES Y ADMIN PUEDEN VER SUS TURNOS
+router.get('/', checkRole(['cliente', 'admin']), turnoController.getMisTurnos); 
+
+// CLIENTES Y ADMIN PUEDEN AGENDAR
+router.post('/', checkRole(['cliente', 'admin']), turnoController.createTurno);
+
+// CLIENTES Y ADMIN PUEDEN CANCELAR
+router.delete('/:id', checkRole(['cliente', 'admin']), turnoController.deleteTurno); 
 
 export default router;

@@ -1,10 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import { RowDataPacket } from 'mysql2'; 
+import { pool } from '../config/database'; 
 import * as turnoModel from '../models/turno.model';
 
 // OBTENER MIS TURNOS
 export const getMisTurnos = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.user) throw new Error('NO AUTORIZADO');
+        
+        // SI ES ADMIN, PODRIA QUERER VER TODOS
         
         const turnos = await turnoModel.findByUserId(req.user.id);
         res.json({ data: turnos });
@@ -16,9 +20,7 @@ export const getMisTurnos = async (req: Request, res: Response, next: NextFuncti
 // OBTENER AGENDA DEL DIA
 export const getAgenda = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        // Obtenemos la fecha del query param o usamos la fecha actual
         const fecha = req.query.fecha as string || new Date().toISOString().split('T')[0];
-        
         const agenda = await turnoModel.getAgendaGlobal(fecha);
         res.json({ fecha, data: agenda });
     } catch (error) {
@@ -33,9 +35,24 @@ export const createTurno = async (req: Request, res: Response, next: NextFunctio
 
         const { fecha_hora, motivo, mascota_id, servicio_id, veterinario_id } = req.body;
 
-        // VALIDACION BASICA DE CAMPOS
         if (!fecha_hora || !motivo || !mascota_id || !servicio_id) {
             return res.status(400).json({ message: 'FALTAN CAMPOS OBLIGATORIOS' });
+        }
+
+        // VALIDACION DE PROPIEDAD DE MASCOTA (SEGURIDAD)
+        // SOLO SI ES CLIENTE VERIFICAMOS QUE LA MASCOTA SEA SUYA
+        if (req.user.rol === 'cliente') {
+            const [rows] = await pool.query<RowDataPacket[]>(
+                `SELECT m.id 
+                 FROM mascotas m 
+                 INNER JOIN duenos d ON m.dueno_id = d.id 
+                 WHERE m.id = ? AND d.usuario_id = ?`,
+                [mascota_id, req.user.id]
+            );
+
+            if (rows.length === 0) {
+                return res.status(403).json({ message: 'NO PUEDES AGENDAR TURNOS PARA MASCOTAS AJENAS' });
+            }
         }
 
         // VALIDACION DE DISPONIBILIDAD VETERINARIO
@@ -60,7 +77,7 @@ export const createTurno = async (req: Request, res: Response, next: NextFunctio
     }
 };
 
-// ELIMINAR MI TURNO
+// ELIMINAR TURNO
 export const deleteTurno = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.user) throw new Error('NO AUTORIZADO');
@@ -73,11 +90,14 @@ export const deleteTurno = async (req: Request, res: Response, next: NextFunctio
             return res.status(404).json({ message: 'TURNO NO ENCONTRADO' });
         }
 
-        const turnosDelUsuario = await turnoModel.findByUserId(req.user.id);
-        const turnoPerteneceAlUsuario = turnosDelUsuario.some(t => t.id === turnoId);
-        
-        if (!turnoPerteneceAlUsuario) {
-            return res.status(403).json({ message: 'NO TIENES PERMISO PARA CANCELAR ESTE TURNO' });
+        // PERMISOS: ADMIN BORRA TODO, CLIENTE SOLO LO SUYO
+        if (req.user.rol !== 'admin') {
+             const turnosDelUsuario = await turnoModel.findByUserId(req.user.id);
+             const turnoPerteneceAlUsuario = turnosDelUsuario.some(t => t.id === turnoId);
+             
+             if (!turnoPerteneceAlUsuario) {
+                 return res.status(403).json({ message: 'NO TIENES PERMISO PARA CANCELAR ESTE TURNO' });
+             }
         }
 
         await turnoModel.remove(turnoId);

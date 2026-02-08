@@ -1,10 +1,11 @@
-import mysql from 'mysql2/promise';
+import { createPool } from 'mysql2/promise'; 
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const pool = mysql.createPool({
- host: process.env.DB_HOST || 'localhost',
+// CONFIGURACION DEL POOL DE CONEXIONES
+export const pool = createPool({
+    host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT) || 3306, 
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
@@ -17,10 +18,10 @@ export const pool = mysql.createPool({
 export const connectDB = async () => {
     try {
         const connection = await pool.getConnection();
-        console.log('Conexión a MySQL exitosa: veterinaria_patitas_felices');
+        console.log('🚀 CONEXIÓN A MYSQL EXITOSA');
         connection.release();
     } catch (error) {
-        console.error('Error al conectar a la base de datos:', error);
+        console.error('❌ ERROR AL CONECTAR A LA BASE DE DATOS:', error);
         process.exit(1);
     }
 };

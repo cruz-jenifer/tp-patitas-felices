@@ -3,31 +3,36 @@ import { RowDataPacket } from 'mysql2';
 import { pool } from '../config/database';
 import * as historialModel from '../models/historial.model';
 
-// CREAR NUEVA ENTRADA EN EL HISTORIAL
+// CREAR NUEVA ENTRADA
 export const createHistorial = async (req: Request, res: Response, next: NextFunction) => {
     try {
         if (!req.user) throw new Error('NO AUTORIZADO');
 
         const { mascota_id, diagnostico, tratamiento, fecha } = req.body;
 
-        // VALIDAR DATOS MINIMOS
         if (!mascota_id || !diagnostico || !fecha) {
             return res.status(400).json({ message: 'FALTAN DATOS OBLIGATORIOS' });
         }
 
-        // BUSCAR ID DE VETERINARIO BASADO EN EL USUARIO LOGUEADO
+        // VALIDAR VETERINARIO
         const [vetRows] = await pool.query<RowDataPacket[]>(
             'SELECT id FROM veterinarios WHERE usuario_id = ?', 
             [req.user.id]
         );
 
-        if (vetRows.length === 0) {
-            return res.status(403).json({ message: 'SOLO LOS VETERINARIOS PUEDEN ESCRIBIR HISTORIAL' });
+        // NOTA: ADMIN TIENE PERMISO EN RUTAS, PERO SI NO ESTA EN TABLA VETERINARIOS
+        // NECESITAMOS UNA LOGICA DE FALLBACK O ERROR. 
+        // ASUMIMOS QUE ADMIN PUEDE ESCRIBIR SI TIENE PERFIL ASOCIADO O FORZAMOS ID 1 (SISTEMA)
+        let veterinarioId: number;
+
+        if (vetRows.length > 0) {
+            veterinarioId = vetRows[0].id;
+        } else if (req.user.rol === 'admin') {
+            veterinarioId = 1; // FALLBACK ADMIN
+        } else {
+            return res.status(403).json({ message: 'NO TIENES PERFIL PROFESIONAL PARA FIRMAR HISTORIAL' });
         }
 
-        const veterinarioId = vetRows[0].id;
-
-        // GUARDAR
         const nuevoRegistro = await historialModel.create({
             mascota_id,
             veterinario_id: veterinarioId,
@@ -43,12 +48,31 @@ export const createHistorial = async (req: Request, res: Response, next: NextFun
     }
 };
 
-// OBTENER HISTORIAL DE UNA MASCOTA
+// OBTENER HISTORIAL (PROTEGIDO)
 export const getHistorialByMascota = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { id } = req.params; // ID DE LA MASCOTA
-        const historial = await historialModel.findByMascotaId(Number(id));
-        
+        if (!req.user) throw new Error('NO AUTORIZADO');
+
+        const { id } = req.params; 
+        const mascotaId = Number(id);
+
+        // VALIDACION DE PROPIEDAD PARA CLIENTES
+        if (req.user.rol === 'cliente') {
+            const [rows] = await pool.query<RowDataPacket[]>(
+                `SELECT m.id 
+                 FROM mascotas m 
+                 INNER JOIN duenos d ON m.dueno_id = d.id 
+                 WHERE m.id = ? AND d.usuario_id = ?`,
+                [mascotaId, req.user.id]
+            );
+
+            if (rows.length === 0) {
+                return res.status(403).json({ message: 'NO ESTAS AUTORIZADO A VER ESTA HISTORIA CLINICA' });
+            }
+        }
+
+        // SI PASA LA VALIDACION O ES VET/ADMIN, RETORNA DATOS
+        const historial = await historialModel.findByMascotaId(mascotaId);
         res.json({ data: historial });
     } catch (error) {
         next(error);
