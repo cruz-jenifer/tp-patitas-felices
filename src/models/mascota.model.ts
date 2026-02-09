@@ -1,32 +1,28 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/database';
-import { Turno, TurnoRow } from '../types/turno';
+import { IMascota } from './interfaces/mascota.interface';
 
-// BUSCAR TURNO POR VETERINARIO Y FECHA (VALIDACIÓN DE DISPONIBILIDAD)
-export const findByVetAndDate = async (veterinarioId: number, fechaHora: string): Promise<Turno | null> => {
-    const [rows] = await pool.query<TurnoRow[]>(
-        'SELECT * FROM turnos WHERE veterinario_id = ? AND fecha_hora = ?',
-        [veterinarioId, fechaHora]
+// BUSCAR MASCOTAS POR DUENO
+export const findByDuenoId = async (duenoId: number): Promise<IMascota[]> => {
+    const [rows] = await pool.query<IMascota[]>(
+        'SELECT * FROM mascotas WHERE dueno_id = ?',
+        [duenoId]
     );
-    return rows.length > 0 ? rows[0] : null;
+    return rows;
 };
 
-// CREAR NUEVO TURNO
-export const create = async (turno: Turno): Promise<Turno> => {
+// CREAR NUEVA MASCOTA
+export const create = async (mascota: Omit<IMascota, 'id'>): Promise<IMascota> => {
     const [result] = await pool.execute<ResultSetHeader>(
-        'INSERT INTO turnos (mascota_id, servicio_id, veterinario_id, fecha_hora, motivo, estado) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO mascotas (nombre, especie, raza, fecha_nacimiento, advertencias, dueno_id) VALUES (?, ?, ?, ?, ?, ?)',
         [
-            turno.mascota_id,
-            turno.servicio_id,
-            turno.veterinario_id,
-            turno.fecha_hora,
-            turno.motivo,
-            turno.estado || 'pendiente'
+            mascota.nombre || null, 
+            mascota.especie || null, 
+            mascota.raza || null, 
+            mascota.fecha_nacimiento || null, 
+            mascota.advertencias || null, 
+            mascota.dueno_id
         ]
     );
-    return { id: result.insertId, ...turno };
+    return { id: result.insertId, ...mascota } as IMascota;
 };
-
-export function findByDuenoId(id: number) {
-    throw new Error('Function not implemented.');
-}

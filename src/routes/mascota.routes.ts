@@ -7,8 +7,8 @@ const router = Router();
 // PROTECCION DE TODAS LAS RUTAS
 router.use(authMiddleware);
 
-// RUTAS CRUD MASCOTAS
+// RUTAS DE MASCOTAS (ENDPOINT: /api/mascotas)
 router.post('/', mascotaController.createMascota);
-router.get('/', mascotaController.getMisMascotas);
+router.get('/', mascotaController.getAll);
 
 export default router;
