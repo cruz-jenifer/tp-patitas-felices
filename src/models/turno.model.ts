@@ -1,5 +1,5 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import {pool} from '../config/database';
+import { pool } from '../config/database';
 
 export interface ITurno {
     id?: number;
@@ -60,8 +60,6 @@ export class TurnoModel {
         const [rows] = await pool.query<RowDataPacket[]>(query, [duenoId]);
         return rows;
     }
-<<<<<<< HEAD
-=======
 
     // NUEVO METODO: OBTENER AGENDA GLOBAL POR FECHA
     static async findAllByFecha(fecha: string): Promise<any[]> {
@@ -82,10 +80,9 @@ export class TurnoModel {
             WHERE DATE(t.fecha_hora) = ?
             ORDER BY t.fecha_hora ASC
         `;
-        
+
         // MYSQL2 ESPERA LA FECHA EN FORMATO 'YYYY-MM-DD'
         const [rows] = await pool.query<RowDataPacket[]>(query, [fecha]);
         return rows;
     }
->>>>>>> 0b51d21 (Feat 8: Panel Profesional (Roles)Objetivo: Endpoints exclusivos para empleados.)
 }
